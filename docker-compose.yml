@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  api:
+    image: node:24-alpine
+    working_dir: /app
+    volumes:
+      - ./api:/app             # Mount locally
+      - /app/node_modules   # Use container's node_modules
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./api/.env
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/sms_chat_db
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+      - TWILIO_AUTH_TOKEN=${TWILIO_ACCOUNT_SID}
+      - TWILIO_PHONE_NUMBER=${TWILIO_ACCOUNT_SID}
+    depends_on:
+      - mongo
+    command: npm run dev
+
+  frontend:
+    image: node:24-alpine
+    working_dir: /app
+    volumes:
+      - ./web:/app        # Mount locally
+      - /app/node_modules  # Use container's node_modules
+    ports:
+      - "8080:8080"
+    command: npm run serve
+
+  mongo:
+    image: mongo:latest
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  localtunnel:
+    image: efrecon/localtunnel
+    restart: unless-stopped
+    depends_on:
+      - api
+    command: --port 3000 --subdomain sms_chat_123
+    ports:
+      - "4040:4040"  # Optional local web UI port for tunnel info
+    networks:
+      - default
+  
+  # ngrok:
+  #   image: ngrok/ngrok:latest
+  #   depends_on:
+  #     - api
+  #   command: http api:3000
+  #   environment:
+  #     NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}   # Add your ngrok auth token in .env or env vars
+  #   ports:
+  #     - "4040:4040"  # Ngrok web UI accessible at localhost:4040
+  #   networks:
+  #     - default
+
+volumes:
+  mongo-data:
