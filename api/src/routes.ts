@@ -1,29 +1,40 @@
-import express from 'express';
-import { sendSms, handleIncomingSms } from './services/twilio.js';
-import { saveMessage, getMessages } from './services/chat.js';
+import cors from 'cors'
+import express from 'express'
+import {
+  getChatsHandler,
+  getMessagesHandler,
+  incomingMessageWebhookHandler,
+  receiveTestMessage,
+  sendTestMessage,
+} from './controllers/messageController.js'
+import { generateFakeIncoming } from './controllers/messageGeneratorController.js'
+import { health, healthUi } from './controllers/statsController.js'
+import { twilioWebhookAuth } from './middleware/twilioWebhookAuth.js'
 
-import { getErrorMessage } from './lib/lib.js';
-import type { Message } from './models/chat.js';
+const protectedRouter = express.Router()
 
-const router = express.Router();
+// NOTE: Specifically choosing POSTs over GETs to maintain as private of phone numbers, even if we used UUIDs, bad actors could determine Bob is talking to the same 4 UUIDs aka people and construct social graphs
+protectedRouter.post('/chat/list', getChatsHandler)
+protectedRouter.post('/chat/messages', getMessagesHandler)
+// Testing endpoints
+protectedRouter.post(
+  '/test/generateRandomIncomingMessage',
+  generateFakeIncoming,
+)
+protectedRouter.post('/test/sendMessage', sendTestMessage)
+protectedRouter.post('/test/receiveMessage', receiveTestMessage)
 
-// POST endpoint Twilio calls on SMS receive (Webhook)
-router.post('/twilio/sms', express.urlencoded({ extended: true }), (req, res) => {
-  const twiml = handleIncomingSms(req.body);
-  res.type('text/xml').send(twiml);
-});
+const publicRouter = express.Router()
 
-// Example API to send SMS message
-router.post('/twilio/send', express.json(), async (req, res) => {
-  try {
-    const { to, from, body } = req.body;
-    const message = await sendSms(to, from, body);
-    res.json(message);
-  } catch (err) {
-    res.status(500).json({ error: getErrorMessage(err) });
-  }
-});
+publicRouter.use(cors())
+publicRouter.get('/health', health) // json health
+publicRouter.get('/health-ui', healthUi) // UI that polls /health every 5s
+publicRouter.post(
+  '/messages/incoming',
+  twilioWebhookAuth,
+  incomingMessageWebhookHandler,
+)
+// router.post('/messages/status-update', twilioWebhookAuth, twilioStatusUpdate) // # TODO
 
+export { protectedRouter, publicRouter }
 
-
-export default router;

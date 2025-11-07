@@ -12,6 +12,10 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AppFooter: typeof import('./components/AppFooter.vue')['default']
+    ChatApp: typeof import('./components/ChatApp.vue')['default']
+    ChatLayout: typeof import('./components/ChatLayout.vue')['default']
+    ChatList: typeof import('./components/ChatList.vue')['default']
+    ChatWindow: typeof import('./components/ChatWindow.vue')['default']
     HelloWorld: typeof import('./components/HelloWorld.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']

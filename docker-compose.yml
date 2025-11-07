@@ -5,17 +5,21 @@ services:
     image: node:24-alpine
     working_dir: /app
     volumes:
-      - ./api:/app             # Mount locally
-      - /app/node_modules   # Use container's node_modules
+      - ./api:/app             # mount local code
+      - /app/node_modules      # keep container node_modules
     ports:
-      - "3000:3000"
+      - "8080:8080"
     env_file:
-      - ./api/.env
+      - ./api/.env             # optional per-service env overrides
     environment:
       - MONGO_URI=mongodb://mongo:27017/sms_chat_db
+      - NODE_ENV=development
       - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
-      - TWILIO_AUTH_TOKEN=${TWILIO_ACCOUNT_SID}
-      - TWILIO_PHONE_NUMBER=${TWILIO_ACCOUNT_SID}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+      - TWILIO_PHONE_NUMBER=${TWILIO_PHONE_NUMBER}
+      # PUBLIC_BASE_URL: set explicitly if you know the exact host that LocalTunnel uses for your subdomain.
+      # Change the host suffix if your LocalTunnel host is different (e.g. loca.lt vs localtunnel.me).
+      - PUBLIC_BASE_URL=https://sms_chat_123.loca.lt
     depends_on:
       - mongo
     command: npm run dev
@@ -24,40 +28,57 @@ services:
     image: node:24-alpine
     working_dir: /app
     volumes:
-      - ./web:/app        # Mount locally
-      - /app/node_modules  # Use container's node_modules
+      - ./web:/app
+      - /app/node_modules
     ports:
-      - "8080:8080"
+      - "3000:3000"
+    depends_on:
+      - api
     command: npm run serve
 
   mongo:
     image: mongo:latest
     restart: unless-stopped
     ports:
-      - "27017:27017"
+      - "27017:27017"         # convenient for local tools; remove for stricter isolation
     volumes:
       - mongo-data:/data/db
 
-  localtunnel:
-    image: efrecon/localtunnel
-    restart: unless-stopped
+  instatunnel:
+    image: node:24-alpine
+    working_dir: /app
     depends_on:
       - api
-    command: --port 3000 --subdomain sms_chat_123
-    ports:
-      - "4040:4040"  # Optional local web UI port for tunnel info
-    networks:
-      - default
-  
+    entrypoint: >
+      sh -c "
+        npm install -g instatunnel &&
+        instatunnel api:8080 --subdomain sms-chat-123
+      "
+
   # ngrok:
   #   image: ngrok/ngrok:latest
+  #   restart: unless-stopped
   #   depends_on:
   #     - api
-  #   command: http api:3000
+  #   env_file:
+  #     - ./api/.env             # optional per-service env overrides
   #   environment:
-  #     NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}   # Add your ngrok auth token in .env or env vars
+  #     - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
+  #   command: http api:8080
   #   ports:
-  #     - "4040:4040"  # Ngrok web UI accessible at localhost:4040
+  #     - "4040:4040" # optional: ngrok web UI
+  #   networks:
+  #     - default
+
+  # localtunnel:
+  #   image: efrecon/localtunnel
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - api
+  #   # forward public traffic to api:8080 (important: change --port to 8080)
+  #   command: --port 8080 --subdomain sms_chat_123
+  #   ports:
+  #     - "4040:4040"           # local UI/debug port
   #   networks:
   #     - default
 
