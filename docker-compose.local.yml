@@ -1,0 +1,12 @@
+services:
+  localtunnel:
+    image: efrecon/localtunnel
+    restart: unless-stopped
+    command: --port 8080 --host host.docker.internal --subdomain sms_chat_123
+    depends_on: []   # remove depends_on if running localtunnel alone
+    ports:
+      - "4040:4040"  # local UI/debug port
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # for Linux support to access host
+    networks:
+      - default
