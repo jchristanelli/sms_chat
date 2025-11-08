@@ -13,7 +13,7 @@
             <v-card-text
               ref="messagesContainer"
               class="flex-grow-1 overflow-y-auto pa-4"
-              style="height: 0"
+              style="flex-grow: 1; min-height: 0;"
             >
               <div v-if="loading" class="text-center">
                 <v-progress-circular color="primary" indeterminate />
@@ -73,17 +73,13 @@
 </template>
 
 <script setup lang="ts">
-  import type { DefaultEventsMap } from '@socket.io/component-emitter'
-  import type { Socket } from 'socket.io-client'
   import type { Message } from '@/models/chat'
   import { v4 as uuidv4 } from 'uuid'
   import { computed, nextTick, onMounted, onUnmounted, ref, watchEffect } from 'vue'
   import MessageInput from '@/components/MessageInput.vue'
   import MessageItem from '@/components/MessageItem.vue'
-  import {
-    connectSocket,
-    disconnectSocket,
-  } from '@/services/socketService.ts'
+  import { socketService } from '@/services/socketService'
+
   import { useChatStore } from '@/stores/chatStore'
 
   const chatStore = useChatStore()
@@ -94,14 +90,10 @@
   const apiUrl = import.meta.env.VITE_API_URL
   const testPhoneNumber = import.meta.env.VITE_TEST_PHONE_NUMBER
 
-  // Singleton socket
-  const socket: Socket<DefaultEventsMap, DefaultEventsMap> = connectSocket(
-    apiUrl,
-  )
-  console.log('connecting to ' + apiUrl)
+  const socket = socketService.connect(apiUrl)
 
   // Reactive connection and transport info
-  const connected = ref(socket.connected)
+  const connected = ref(socketService.connected)
   const transportType = ref('unknown')
 
   // Reactive computed properties
@@ -136,7 +128,7 @@
 
   // Send message with optimistic local update
   function sendMessage (text: string) {
-    if (!socket || !connected.value) {
+    if (!socketService || !connected.value) {
       console.error('Socket not connected')
       return
     }
@@ -149,7 +141,7 @@
       timestamp: Date.now(), // Server will override this as source of truth
     }
 
-    socket.emit('message:send', message)
+    socketService.emit('message:send', message)
     // Optimistic update of message locally
     chatStore.upsertMessage(message)
 
@@ -186,15 +178,15 @@
   onMounted(() => {
     loadMessageHistory()
 
-    socket.on('connect', () => {
+    socketService.on('connect', () => {
       chatStore.setConnected(true)
       connected.value = true
-      transportType.value = socket.io.engine.transport.name || 'unknown'
+      transportType.value = socketService['socket']?.io.engine.transport.name || 'unknown'
       showConnectionStatus.value = true
       console.log('Socket connected')
     })
 
-    socket.on('disconnect', () => {
+    socketService.on('disconnect', () => {
       chatStore.setConnected(false)
       connected.value = false
       transportType.value = 'disconnected'
@@ -202,33 +194,41 @@
       console.log('Socket disconnected')
     })
 
-    socket.on('message:new', (msg: Message) => {
+    socketService.on('message:new', (msg: Message) => {
       chatStore.upsertMessage(msg)
       scrollToBottom()
     })
 
-    socket.on('message:sent', (msgPayload: Message & { tempId: string }) => {
+    socketService.on('message:sent', (msgPayload: Message & { tempId: string }) => {
       console.log('msgPayload', msgPayload)
       chatStore.upsertMessage(msgPayload)
       scrollToBottom()
     })
 
-    socket.on('message:send:error', err => {
+    socketService.on('message:send:error', err => {
       console.error('Message send error:', err)
     })
 
-    socket.on('error', err => {
+    socketService.on('error', err => {
       console.error('Socket error:', err)
     })
 
-    socket.io.engine.on('upgrade', () => {
-      transportType.value = socket.io.engine.transport.name || 'unknown'
+    socketService['socket']?.io.engine.on('upgrade', () => {
+      transportType.value = socketService['socket']?.io.engine.transport.name || 'unknown'
       console.log('Transport upgraded to', transportType.value)
     })
   })
 
   onUnmounted(() => {
-    disconnectSocket()
+    socketService.off('connect')
+    socketService.off('disconnect')
+    socketService.off('message:new')
+    socketService.off('message:sent')
+    socketService.off('message:send:error')
+    socketService.off('error')
+    socketService['socket']?.io.engine.off('upgrade')
+
+    socketService.disconnect()
   })
 </script>
 

@@ -7,15 +7,6 @@ const twilioPhoneNumber = getRequiredEnvVar('TWILIO_PHONE_NUMBER')
 
 const twilioClient = twilio(accountSid, authToken)
 
-// fake client
-// const twilioClient = {
-//   messages: {
-//     create() {
-//       return { sid: uuidv4() }
-//     }
-//   }
-// }
-
 function _envTrim(name: string): string {
   return (process.env[name] || '').trim()
 }

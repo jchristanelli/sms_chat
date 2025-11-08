@@ -26,13 +26,7 @@
     },
   })
 
-  const isOutbound = computed(() => {
-    return (
-      props.message.direction === 'outbound'
-      || props.message.direction === 'outgoing'
-      || props.message.type === 'sent'
-    )
-  })
+  const isOutbound = computed(() => props.message.isOutbound)
 
   function formatTime (timestamp: number, sid: string) {
     if (!sid) {
@@ -42,7 +36,7 @@
 
     const date = new Date(timestamp)
     const now = new Date()
-    const diffMs: number = (now as unknown as number) - (date as unknown as number)
+    const diffMs: number = now.getTime() - date.getTime()
     const diffMins = Math.floor(diffMs / 60_000)
 
     if (diffMins < 1) return 'Just now'

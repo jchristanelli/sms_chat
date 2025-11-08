@@ -17,9 +17,7 @@ services:
       - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
       - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
       - TWILIO_PHONE_NUMBER=${TWILIO_PHONE_NUMBER}
-      # PUBLIC_BASE_URL: set explicitly if you know the exact host that LocalTunnel uses for your subdomain.
-      # Change the host suffix if your LocalTunnel host is different (e.g. loca.lt vs localtunnel.me).
-      - PUBLIC_BASE_URL=https://sms_chat_123.loca.lt
+      - TEST_PHONE=${TEST_PHONE}
     depends_on:
       - mongo
     command: npm run dev
@@ -32,6 +30,11 @@ services:
       - /app/node_modules
     ports:
       - "3000:3000"
+    env_file:
+      - ./web/.env             # optional per-service env overrides
+    environment:
+      - VITE_API_URL=http://localhost:8080
+      - VITE_TEST_PHONE_NUMBER=${VITE_TEST_PHONE_NUMBER}
     depends_on:
       - api
     command: npm run serve
@@ -54,35 +57,8 @@ services:
     entrypoint: >
       sh -c "
         npm install -g instatunnel &&
-        instatunnel api:8080 --subdomain sms-chat-123
+        instatunnel connect 8080 --subdomain sms-chat
       "
-
-  # ngrok:
-  #   image: ngrok/ngrok:latest
-  #   restart: unless-stopped
-  #   depends_on:
-  #     - api
-  #   env_file:
-  #     - ./api/.env             # optional per-service env overrides
-  #   environment:
-  #     - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
-  #   command: http api:8080
-  #   ports:
-  #     - "4040:4040" # optional: ngrok web UI
-  #   networks:
-  #     - default
-
-  # localtunnel:
-  #   image: efrecon/localtunnel
-  #   restart: unless-stopped
-  #   depends_on:
-  #     - api
-  #   # forward public traffic to api:8080 (important: change --port to 8080)
-  #   command: --port 8080 --subdomain sms_chat_123
-  #   ports:
-  #     - "4040:4040"           # local UI/debug port
-  #   networks:
-  #     - default
 
 volumes:
   mongo-data-1:
