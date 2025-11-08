@@ -10,6 +10,26 @@ import {
 import { generateFakeIncoming } from './controllers/messageGeneratorController.js'
 import { health, healthUi } from './controllers/statsController.js'
 import { twilioWebhookAuth } from './middleware/twilioWebhookAuth.js'
+import type { IncomingMessage, ServerResponse } from 'http'
+
+
+const rawBodySaver = (req: IncomingMessage, res: ServerResponse, buf: Buffer) => {
+  if (buf && buf.length) {
+    (req as IncomingMessage & { rawBody?: string}).rawBody = buf.toString('utf8');
+  }
+};
+
+// We need to parse the raw body for this so we must bypass json parsing
+const twilioRouter = express.Router()
+
+twilioRouter.use(cors())
+twilioRouter.post(
+  '/messages/incoming',
+  express.urlencoded({ extended: true, verify: rawBodySaver }),
+  express.json({ verify: rawBodySaver }),
+  twilioWebhookAuth,
+  incomingMessageWebhookHandler,
+)
 
 const protectedRouter = express.Router()
 
@@ -21,6 +41,7 @@ protectedRouter.post(
   generateFakeIncoming,
 )
 protectedRouter.post('/test/outgoing-message', sendTestMessage)
+protectedRouter.post('/test/outgoing-message', sendTestMessage)
 protectedRouter.post('/test/incoming-message', receiveTestMessage)
 
 const publicRouter = express.Router()
@@ -29,12 +50,7 @@ publicRouter.use(cors())
 publicRouter.post('/chat/messages', getMessagesHandler)
 publicRouter.get('/health', health) // json health
 publicRouter.get('/health-ui', healthUi) // UI that polls /health every 5s
-publicRouter.post(
-  '/messages/incoming',
-  twilioWebhookAuth,
-  incomingMessageWebhookHandler,
-)
 // router.post('/messages/status-update', twilioWebhookAuth, twilioStatusUpdate) // # TODO
 
-export { protectedRouter, publicRouter }
+export { protectedRouter, publicRouter, twilioRouter }
 

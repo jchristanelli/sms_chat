@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
+    "preview-and-expose": "vite preview --host",
     "build-only": "vite build",
     "type-check": "vue-tsc --build --force",
     "lint": "eslint . --fix"
@@ -14,7 +15,6 @@
   "dependencies": {
     "@fontsource/roboto": "5.2.7",
     "@mdi/font": "7.4.47",
-    "@types/socket.io": "^3.0.1",
     "awesome-phonenumber": "^7.5.0",
     "libphonenumber-js": "^1.12.25",
     "pinia": "^3.0.3",
@@ -26,6 +26,7 @@
     "vuetify": "^3.10.1"
   },
   "devDependencies": {
+    "@types/socket.io": "^3.0.1",
     "@tsconfig/node22": "^22.0.0",
     "@types/node": "^22.9.0",
     "@types/socket.io-client": "^1.4.36",

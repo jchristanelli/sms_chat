@@ -10,11 +10,11 @@ export function errorHandler(
 ) {
   logger.error('Unhandled error caught in middleware error handler', err)
 
-  const { statusCode, message } = err
+  const {  message } = err
 
-  res.status(statusCode).json({
+  res.status(500).json({
     success: false,
-    status: statusCode || 500,
+    status: 500,
     message: message || 'Internal Server Error',
     // Show stack trace only in development
     stack: isDev() ? err.stack : undefined,

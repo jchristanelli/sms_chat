@@ -1,64 +1,75 @@
 version: '3.8'
 
 services:
-  api:
-    image: node:24-alpine
-    working_dir: /app
+  mongo:
+    image: mongo:latest
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
     volumes:
-      - ./api:/app             # mount local code
-      - /app/node_modules      # keep container node_modules
+      - mongo-data-1:/data/db
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  mongo-init:
+    image: mongo:latest
+    depends_on:
+      mongo:
+        condition: service_healthy
+    command: >
+      mongosh --host mongo:27017 --eval '
+        try {
+          var status = rs.status();
+          print("Replica set already initialized");
+        } catch(e) {
+          print("Initializing replica set...");
+          rs.initiate({
+            _id: "rs0",
+            members: [{ _id: 0, host: "mongo:27017" }]
+          });
+          print("Replica set initialized successfully");
+        }
+      '
+    restart: "no"
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    working_dir: /app
     ports:
       - "8080:8080"
     env_file:
-      - ./api/.env             # optional per-service env overrides
+      - .env             # optional per-service env overrides
     environment:
-      - MONGO_URI=mongodb://mongo:27017/sms_chat_db
+      - MONGO_URI=mongodb://mongo:27017/sms_chat_db?replicaSet=rs0
       - NODE_ENV=development
       - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
       - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
       - TWILIO_PHONE_NUMBER=${TWILIO_PHONE_NUMBER}
       - TEST_PHONE=${TEST_PHONE}
     depends_on:
+      - mongo-init
       - mongo
-    command: npm run dev
 
   frontend:
-    image: node:24-alpine
+    build:
+      context: ./web
+      dockerfile: Dockerfile
     working_dir: /app
-    volumes:
-      - ./web:/app
-      - /app/node_modules
     ports:
-      - "3000:3000"
+      - "3000:4173"
     env_file:
-      - ./web/.env             # optional per-service env overrides
+      - .env             # optional per-service env overrides
     environment:
-      - VITE_API_URL=http://localhost:8080
-      - VITE_TEST_PHONE_NUMBER=${VITE_TEST_PHONE_NUMBER}
-    depends_on:
-      - api
-    command: npm run serve
+      - VITE_API_URL=http://api:8080
+      - VITE_TEST_PHONE=${VITE_TEST_PHONE}
 
-  mongo:
-    image: mongo:latest
-    restart: unless-stopped
-    ports:
-      - "27017:27017"         # convenient for local tools; remove for stricter isolation
-    volumes:
-      - mongo-data-1:/data/db
-      - ./mongo-init-replica.js:/docker-entrypoint-initdb.d/mongo-init-replica.js:ro
-    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]  # Enable replica set and bind all IPs
-
-  instatunnel:
-    image: node:24-alpine
-    working_dir: /app
-    depends_on:
-      - api
-    entrypoint: >
-      sh -c "
-        npm install -g instatunnel &&
-        instatunnel connect 8080 --subdomain sms-chat
-      "
 
 volumes:
   mongo-data-1:

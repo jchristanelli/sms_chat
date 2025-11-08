@@ -1,15 +1,12 @@
-# Stage 1: Build stage
-FROM node:lts AS builder
+FROM node:lts
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
-RUN npm install -g ts-node typescript
+RUN npm install
 
 COPY . .
 
 EXPOSE 8080
 
 CMD ["node", "--loader", "ts-node/esm", "src/server.ts"]
-

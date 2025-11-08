@@ -4,41 +4,21 @@
 
 ### Prerequisites
 
-- Docker & Docker Compose (or Docker Desktop with `docker compose`)
-- `.env` file in `/api` project's root (see sample below)
-- (Optional) Twilio account + trial number if you want real SMS
+- Install Docker & Docker Compose (or Docker Desktop with `docker compose`)
+- Setup`.env` file at root
+- Twilio account + trial number 
+- Run .startup.sh 
 
 ### Configure Environment Files
 
-**In `/api`**  
-Create `.env` using `.env.example` as a template.
-
-Required:
+Create a `.env` in the repo root with the following fields (see `.evn.example`)
 
 ```env
-Twilio - required if you want real SMS sending
-TWILIO_ACCOUNT_SID=your_twilio_account_sid_here
-TWILIO_AUTH_TOKEN=your_twilio_auth_token_here
-
-(e.g. 999-888-7777 as +19998887777)
-TWILIO_PHONE_NUMBER=+1xxxXXXxxxx
-
-Your receiving test phone (e.g. 999-888-7777 as +19998887777)
-TEST_PHONE=+1##########
-```
-
-**In `/web`**  
-Create `.env` using `.env.example` as a template.  
-You need to enter an outgoing number in the form +1aaaBBBcccc (e.g. 000-555-1111 as +10005551111).
-
-Required:
-
-```env
-VITE_API_URL=http://localhost:8080
-VITE_TEST_PHONE_NUMBER=+1xxxXXXxxxx
-
-(e.g. 999-888-7777 as +19998887777)
-text
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_PHONE_NUMBER=+10000000000 # prefix with a +1
+TEST_PHONE=+10000000000 # prefix with a +1
+VITE_TEST_PHONE=+10000000000 # prefix with a +1
 ```
 
 ---
@@ -130,25 +110,12 @@ Watch logs:
 
 ```bash
 # API Logs
-docker compose logs -f api
+docker compose logs -f api --tail=50
 
 # All Logs
 docker compose logs -f
 ```
 
-- See Twilio responses, DB errors, socket events.
-
----
-
-## Stop
-
-```bash
-docker compose down
-```
-
-- Stops and removes containers (keeps volumes). Add `-v` to remove volumes.
-
----
 
 ## Security Notes (dev)
 
@@ -162,13 +129,50 @@ docker compose down
 **Start Mongo locally:**
 
 ```bash
-docker run --name mongodb-dev -p 27017:27017 -d mongo
+docker compose -f docker-compose.mongo.yml up -d
 ```
+
+**Stop Mongo locally:**
+docker compose -f docker-compose.mongo.yml down -v
+
 
 **Start instatunnel locally:**
 
 ```bash
 instatunnel connect 8080 -s SUBDOMAIN_HERE
+```
+
+**Setup `.env` for both /api and /web**
+For Development:
+
+**In `/api`**  
+Create `.env` using `.env.example` as a template.
+
+Required:
+
+```env
+Twilio - required if you want real SMS sending
+TWILIO_ACCOUNT_SID=your_twilio_account_sid_here
+TWILIO_AUTH_TOKEN=your_twilio_auth_token_here
+
+(e.g. 999-888-7777 as +19998887777)
+TWILIO_PHONE_NUMBER=+1xxxXXXxxxx
+
+Your receiving test phone (e.g. 999-888-7777 as +19998887777)
+TEST_PHONE=+1##########
+```
+
+**In `/web`**  
+Create `.env` using `.env.example` as a template.  
+You need to enter an outgoing number in the form +1aaaBBBcccc (e.g. 000-555-1111 as +10005551111).
+
+Required:
+
+```env
+API_URL=http://localhost:8080
+TEST_PHONE=+1xxxXXXxxxx
+(e.g. 999-888-7777 as +19998887777)
+text
 ```
 
 ---
@@ -206,3 +210,7 @@ instatunnel connect 8080 -s SUBDOMAIN_HERE
 - Visual and style bug fixes
 - Mongo transactions fixed (single node replica set)
 - Setup instatunnel
+- Fixed api docker image
+- Fixed docker compose issue running a replica set (for transactions)
+- Created script for docker compose followed by instatunnel (it wont work in docker, architecture issue)
+- Fixed Twilio auth check (two specific work arounds)

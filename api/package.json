@@ -1,7 +1,5 @@
 {
   "dependencies": {
-    "@types/morgan": "^1.9.10",
-    "awesome-phonenumber": "^7.5.0",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "libphonenumber-js": "^1.12.25",
@@ -9,15 +7,14 @@
     "morgan": "^1.10.1",
     "socket.io": "^4.8.1",
     "twilio": "^5.10.4",
-    "uuid": "^13.0.0",
-    "ws": "^8.18.3"
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.5",
+    "@types/morgan": "^1.9.10",
     "@types/node": "^24.10.0",
     "@types/socket.io": "^3.0.1",
     "@types/twilio": "^3.19.2",
-    "@types/ws": "^8.18.1",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"

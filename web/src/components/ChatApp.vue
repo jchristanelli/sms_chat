@@ -88,7 +88,7 @@
   const popupDurationMs = 3000
 
   const apiUrl = import.meta.env.VITE_API_URL
-  const testPhoneNumber = import.meta.env.VITE_TEST_PHONE_NUMBER
+  const testPhoneNumber = import.meta.env.VITE_TEST_PHONE
 
   const socket = socketService.connect(apiUrl)
 
