@@ -15,18 +15,18 @@ const protectedRouter = express.Router()
 
 // NOTE: Specifically choosing POSTs over GETs to maintain as private of phone numbers, even if we used UUIDs, bad actors could determine Bob is talking to the same 4 UUIDs aka people and construct social graphs
 protectedRouter.post('/chat/list', getChatsHandler)
-protectedRouter.post('/chat/messages', getMessagesHandler)
 // Testing endpoints
 protectedRouter.post(
-  '/test/generateRandomIncomingMessage',
+  '/test/incoming-message/randomize',
   generateFakeIncoming,
 )
-protectedRouter.post('/test/sendMessage', sendTestMessage)
-protectedRouter.post('/test/receiveMessage', receiveTestMessage)
+protectedRouter.post('/test/outgoing-message', sendTestMessage)
+protectedRouter.post('/test/incoming-message', receiveTestMessage)
 
 const publicRouter = express.Router()
 
 publicRouter.use(cors())
+publicRouter.post('/chat/messages', getMessagesHandler)
 publicRouter.get('/health', health) // json health
 publicRouter.get('/health-ui', healthUi) // UI that polls /health every 5s
 publicRouter.post(

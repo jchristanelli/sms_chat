@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema } from 'mongoose'
+import mongoose, { Schema } from 'mongoose'
 
 // export enum MessageStatus {
 //   Sending = 'SENDING',
@@ -7,7 +7,7 @@ import mongoose, { Document, Schema } from 'mongoose'
 //   Failed = 'FAILED',
 // }
 
-export interface Message{
+export interface Message {
   sid: string
   isOutbound: boolean
   phoneNumber: string
@@ -16,14 +16,13 @@ export interface Message{
   // status: MessageStatus
 }
 
-export interface Chat{
+export interface Chat {
   phoneNumber: string
   messageCount: number
   lastMsgTimestamp: number
 }
 
 const MessageSchema = new Schema({
-  id: { type: String, required: true, unique: true },
   sid: { type: String, required: true, unique: true },
   isOutbound: { type: Boolean, required: true },
   text: { type: String, required: true },
@@ -48,24 +47,32 @@ const ChatModel = mongoose.model<Chat>('Chat', ChatSchema)
 export const saveMessage = async (message: Message) => {
   const { sid, phoneNumber } = message
 
-  const [existingMessage, chat] = await Promise.all([
-    MessageModel.findOne({ sid }).exec(),
-    ChatModel.findOne({ phoneNumber }).exec(),
-  ])
-
-  if (existingMessage) {
-    // # TODO Update status
-    return
-  }
-
   const session = await mongoose.startSession()
-
   session.startTransaction()
+
   try {
-    await Promise.all([
-      ChatModel.findOne({ phoneNumber }).exec(),
-      MessageModel.find({ phoneNumber }).sort({ timestamp: 1 }).exec(),
-    ])
+    const existingMessage = await MessageModel.findOne({ sid })
+      .session(session)
+      .exec()
+    if (existingMessage) {
+      // Message exists, optionally update status here
+      await session.commitTransaction()
+      session.endSession()
+      return
+    }
+
+    await MessageModel.create([message], { session })
+
+    // Upsert chat document
+    await ChatModel.findOneAndUpdate(
+      { phoneNumber },
+      {
+        $inc: { msgCount: 1 },
+        $max: { lastMsgTimestamp: message.timestamp },
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true, session },
+    )
+
     await session.commitTransaction()
   } catch (error) {
     await session.abortTransaction()
@@ -86,6 +93,7 @@ export const getChats = () => {
   return ChatModel.find().sort({ lastMsgTimestamp: -1 }).exec()
 }
 
+// TODO: Allow multiple numbers to communicate with (but no way to check this)
 // export const getChats = async () => {
 //   // Example aggregate query returning message count per phone number
 //   const result = await ChatModel.aggregate([

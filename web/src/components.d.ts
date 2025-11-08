@@ -17,6 +17,8 @@ declare module 'vue' {
     ChatList: typeof import('./components/ChatList.vue')['default']
     ChatWindow: typeof import('./components/ChatWindow.vue')['default']
     HelloWorld: typeof import('./components/HelloWorld.vue')['default']
+    MessageInput: typeof import('./components/MessageInput.vue')['default']
+    MessageItem: typeof import('./components/MessageItem.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
   }

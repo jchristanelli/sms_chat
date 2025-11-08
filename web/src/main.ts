@@ -4,20 +4,27 @@
  * Bootstraps Vuetify and other plugins then mounts the App`
  */
 
-// Plugins
-import { registerPlugins } from '@/plugins'
+import { createPinia } from 'pinia'
 
-// Components
-import App from './App.vue'
-
-// Composables
 import { createApp } from 'vue'
+import { createVuetify } from 'vuetify'
+import * as components from 'vuetify/components'
+import * as directives from 'vuetify/directives'
+import App from './App.vue'
+import ChatApp from './components/ChatApp.vue'
+import 'vuetify/styles'
+import '@mdi/font/css/materialdesignicons.css'
 
-// Styles
-import 'unfonts.css'
+const vuetify = createVuetify({
+  components,
+  directives,
+  theme: {
+    defaultTheme: 'light',
+  },
+})
 
 const app = createApp(App)
-
-registerPlugins(app)
-
+const pinia = createPinia()
+app.use(pinia)
+app.use(vuetify)
 app.mount('#app')

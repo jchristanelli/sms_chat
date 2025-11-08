@@ -42,7 +42,9 @@ services:
     ports:
       - "27017:27017"         # convenient for local tools; remove for stricter isolation
     volumes:
-      - mongo-data:/data/db
+      - mongo-data-1:/data/db
+      - ./mongo-init-replica.js:/docker-entrypoint-initdb.d/mongo-init-replica.js:ro
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]  # Enable replica set and bind all IPs
 
   instatunnel:
     image: node:24-alpine
@@ -83,4 +85,4 @@ services:
   #     - default
 
 volumes:
-  mongo-data:
+  mongo-data-1:

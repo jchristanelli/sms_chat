@@ -94,14 +94,12 @@ export async function incomingMessageWebhookHandler(
     } catch (err) {
       logger.error('Failed to save incoming message', err)
       return res.status(500).json('Webhook processing error')
-      // optionally continue since saving failure may not block webhook response
     }
 
     try {
       broadcastNewMessage(message)
     } catch (err) {
       logger.error('Failed to broadcast new message', err)
-      // optionally continue to respond to Twilio
     }
 
     res.type('text/xml').send('<Response></Response>') // Empty TwiML response
@@ -110,14 +108,19 @@ export async function incomingMessageWebhookHandler(
   }
 }
 
-// Get chat messages by phone number
 export async function getMessagesHandler(req: Request, res: Response) {
   try {
-    const phoneNumber = req.params.phone
+    const phoneNumber = req.body.phoneNumber
     if (!phoneNumber) {
       return res.status(400).json('Missing phone number')
     }
-    const messages = await getMessages(phoneNumber)
+
+    const validPhoneNumber = normalizeUSToE164(phoneNumber)
+    if (!validPhoneNumber) {
+      return res.status(400).json('Not a valid US phone number')
+    }
+
+    const messages = await getMessages(validPhoneNumber)
     res.json(messages)
   } catch (error) {
     res.status(500).json('Failed to fetch messages')
@@ -129,21 +132,7 @@ export async function getChatsHandler(req: Request, res: Response) {
     const chats = await getChats()
     res.json(chats)
   } catch (error) {
-    console.error('Failed to get conversations:', error);
+    console.error('Failed to get conversations:', error)
     res.status(500).json('Failed to get cconversations')
   }
 }
-
-// TODO: Remove (from using ws package)
-// let longPollingClients: Response[] = []
-
-// export async function longPoll(req: Request, res: Response) {
-//   longPollingClients.push(res)
-//   setTimeout(() => {
-//     const index = longPollingClients.indexOf(res)
-//     if (index !== -1) {
-//       longPollingClients.splice(index, 1)
-//       res.json({ messages: [] }) // Empty response if timeout
-//     }
-//   }, Number(process.env.LONG_POLL_SECS || 10) * 1000)
-// }

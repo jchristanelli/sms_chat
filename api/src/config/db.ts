@@ -2,7 +2,8 @@ import mongoose from 'mongoose'
 import { logger } from '../utils/logger.js'
 
 const MONGO_URI =
-  process.env.MONGO_URI || 'mongodb://localhost:27017/sms_chat_db'
+  (process.env.MONGO_URI || 'mongodb://localhost:27017/sms_chat_db') + 
+  '?replicaSet=rs0'
 
 export const connectDB = async () => {
   try {

@@ -15,8 +15,7 @@ type NewMessagePayload = {
   tempId: string
 }
 
-type UpdatedMessagePayload = {
-  message: Message
+type UpdatedMessagePayload = Message & {
   tempId: string
 }
 
@@ -52,7 +51,7 @@ export function setupSocket(server: HttpServer) {
     }
 
     // Send welcome message on connect
-    socket.emit('connect', {
+    socket.emit('welcome', {
       type: 'connect',
       message: 'Connected to sms-chat socket',
     })
@@ -129,13 +128,13 @@ export function setupSocket(server: HttpServer) {
           await saveMessage(message)
 
           const messagePayload: UpdatedMessagePayload = {
-            message,
             tempId: data.tempId ?? '',
+            ...message,
           }
 
           // Send back with timestamp
           socket.emit('message:sent', messagePayload)
-          socket.broadcast.emit('message:new', messagePayload)
+          socket.broadcast.emit('message:new', message)
 
           if (isDev())
             logger.log(
