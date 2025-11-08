@@ -63,6 +63,13 @@ docker compose logs instatunnel --tail=50
 
 ---
 
+### Run the frontend
+
+You should not be able to see the app running at http://localhost:3000
+
+<img width="659" height="407" alt="image" src="https://github.com/user-attachments/assets/13a2b8d2-4f9b-4c12-83d5-2c5df83d6626" />
+
+
 ### Health & Status Checks
 
 **API health:**
@@ -75,6 +82,10 @@ Or visit:
 
 [http://localhost:8080/api/health-ui](http://localhost:8080/api/health-ui)  
 for an auto-refresh live stats page.
+
+An example of the live health check page:
+
+<img width="520" height="475" alt="image" src="https://github.com/user-attachments/assets/9e16cc8b-886c-4f30-b258-bf7e72e38723" />
 
 **Mongo (optional):**
 
