@@ -28,63 +28,39 @@ VITE_TEST_PHONE=+10000000000 # prefix with a +1
 From repo root:
 
 ```bash
-docker compose up --build
+./startup.sh
 ```
 
-- This builds the images, starts Mongo, the backend, the frontend, and instatunnel (exposes the API to the internet so Twilio can hit the API's webhooks).
+**This takes care of everything, it will finish by opening 3 websites.**
 
-If you set `PUBLIC_BASE_URL` in `.env`, you already know the public URL.
-
-Or inspect logs:
-
-```bash
-docker compose logs instatunnel --tail=50
-```
-
----
-
-### Run the frontend
-
-You should now be able to see the app running at http://localhost:3000
+The first website is the chat app itself: http//localhost:3000
 
 <img width="659" height="407" alt="image" src="https://github.com/user-attachments/assets/13a2b8d2-4f9b-4c12-83d5-2c5df83d6626" />
 
+The next two websites are live status pages from localhost: http://localhost:8080 along with the public facing version https://sms-chat.instatunnel.my/api/health-ui both of which auto-refresh every 5 seconds
+
+<img width="520" height="475" alt="image" src="https://github.com/user-attachments/assets/9e16cc8b-886c-4f30-b258-bf7e72e38723" />
 
 ### Health & Status Checks
 
-**API health:**
+**API health as json**
 
 ```bash
 curl http://localhost:8080/health
 ```
 
-Or visit:
-
-[http://localhost:8080/api/health-ui](http://localhost:8080/api/health-ui)  
-for an auto-refresh live stats page.
-
-An example of the live health check page:
-
-<img width="520" height="475" alt="image" src="https://github.com/user-attachments/assets/9e16cc8b-886c-4f30-b258-bf7e72e38723" />
-
 **Mongo (optional):**
 
+Enter mongo shell
 ```bash
-docker compose exec mongo mongo --eval 'db.getMongo()'
+docker compose exec mongo mongosh
 ```
-
-Or read the file produced by the wait script inside the api container:
-
-```bash
-docker compose exec api cat /app/.localtunnel || true
-```
-
----
 
 ### Test Sending / Webhook Flow (Dev)
 
-1. Make sure destination number is verified on Twilio if on a trial account.
-2. Use API endpoint or UI in the frontend to send a message.
+In the web app http://localhost:3000 you can simply start typing a message and it will attempt to go through twilio. If successful it will go into the database. You will need a verified phone number for this that is associated with your account credentials (which should be added to the `.env`
+
+You can also simulate recieving a webohook but this will require disabling the `api/src/middleware/twilioWebhookAuth.ts` code.
 
 Example curl for webhook:
 
@@ -101,6 +77,7 @@ curl -X POST http://localhost:8080/api/messages/incoming
 - No public URL: confirm `instatunnel` service ran and used the intended subdomain; inspect logs.
 - Twilio errors sending: check `TWILIO_*` env values and Twilio Console logs.
 - Socket disconnects backend/frontend: ensure frontend connects to `http://localhost:8080` (or to `PUBLIC_BASE_URL` in remote tests) and use Socket.IO client.
+- API not connecting to mongo, check mongo is actually a replica set. Enter mongo shell (see above) and then type `rs.conf()` and check if it shows you replica stats (therefore it is a replica) as well as checking the hostname is mongo:27017 rather than localhost:27017 
 
 ---
 
