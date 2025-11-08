@@ -17,6 +17,9 @@ Create a `.env` in the repo root with the following fields (see `.evn.example`)
 TWILIO_ACCOUNT_SID=
 TWILIO_AUTH_TOKEN=
 TWILIO_PHONE_NUMBER=+10000000000 # prefix with a +1
+
+# These two are the same number, one is for the API and one for the UI 
+# Vite requires the VITE_ prefix
 TEST_PHONE=+10000000000 # prefix with a +1
 VITE_TEST_PHONE=+10000000000 # prefix with a +1
 ```
@@ -28,6 +31,9 @@ VITE_TEST_PHONE=+10000000000 # prefix with a +1
 From repo root:
 
 ```bash
+# Required on linux / mac
+chmod +x script.sh
+
 ./startup.sh
 ```
 
