@@ -65,7 +65,7 @@ docker compose logs instatunnel --tail=50
 
 ### Run the frontend
 
-You should not be able to see the app running at http://localhost:3000
+You should now be able to see the app running at http://localhost:3000
 
 <img width="659" height="407" alt="image" src="https://github.com/user-attachments/assets/13a2b8d2-4f9b-4c12-83d5-2c5df83d6626" />
 
